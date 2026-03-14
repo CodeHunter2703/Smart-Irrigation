@@ -15,6 +15,7 @@ import SettingsPanel from '../components/SettingsPanel'
 import WeatherWidget from '../components/WeatherWidget'
 import CommunityPanel from '../components/CommunityPanel'
 import SensorDashboard from '../components/SensorDashboard'
+import PlantDiseaseCard from '../components/PlantDiseaseCard'
 import ControlsPage from './ControlsPage'
 
 const POLL_INTERVAL = 30_000      // refresh every 30 seconds
@@ -22,6 +23,7 @@ const DEVICE_ID = 'field-001'
 
 const NAV_TABS = [
     { id: 'overview', label: 'Overview' },
+    { id: 'disease', label: '🌿 Disease AI' },
     { id: 'controls', label: 'Controls' },
     { id: 'analytics', label: 'Analytics' },
     { id: 'schedule', label: 'Schedule' },
@@ -236,6 +238,8 @@ export default function DashboardPage() {
                     <div className="space-y-6 animate-fade-in">
                         <SensorDashboard deviceId={DEVICE_ID} />
                         <SensorCards data={latestData} />
+                        {/* Plant Disease Detection — always visible on overview for judges */}
+                        <PlantDiseaseCard />
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             <div className="lg:col-span-2">
                                 <SensorCharts history={history} />
@@ -244,6 +248,12 @@ export default function DashboardPage() {
                                 <WeatherWidget />
                             </div>
                         </div>
+                    </div>
+                )}
+
+                {activeTab === 'disease' && (
+                    <div className="animate-fade-in max-w-3xl">
+                        <PlantDiseaseCard />
                     </div>
                 )}
 

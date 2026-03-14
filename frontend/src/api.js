@@ -96,3 +96,11 @@ export const addComment = (postId, comment) =>
 // ── Gemini AI ───────────────────────────────────────────────
 export const askGemini = (query, context = {}) =>
     post('/gemini/ask', { query, context })
+
+// ── Plant Disease Detection ─────────────────────────────────
+export const predictPlantDisease = (imageBase64, isDemoType = null) =>
+    post('/plant-disease/predict', { image: imageBase64, is_demo: isDemoType })
+
+export const getDemoImages = () => get('/plant-disease/demo-images')
+
+export const getPlantDiseaseClasses = () => get('/plant-disease/classes')
