@@ -1,0 +1,121 @@
+# 💧 AquaIQ — Smart Irrigation Scheduler Documentation
+
+## 1. Project Overview
+**AquaIQ** is an end-to-end IoT Smart Irrigation Scheduler developed for the Hackathon 2026 (IoT + AI Track). The platform replaces traditional timer-based watering systems with data-driven automation. By combining live hardware sensor data, weather forecasting logic, and machine learning, it optimizes water usage and maintains optimal crop health.
+
+---
+
+## 2. System Architecture
+The application workflow follows a 4-tier architecture:
+1. **Edge/Hardware Layer**: ESP32 microcontrollers deployed in the field, equipped with DHT22 (temperature/humidity) and capacitive soil moisture sensors.
+2. **Backend/API Layer**: A Python Flask server acting as the central "Decision Engine." It calculates when to irrigate based on live environmental data, API weather forecasts (OpenWeather), and ML predictions.
+3. **Database Layer**: Google Firebase Firestore (NoSQL) stores `sensor_readings`, `logs`, `devices`, and `settings`. It also features an offline/demo in-memory `MockFirestore` fallback so the app works seamlessly during local testing.
+4. **Client/Frontend Layer**: A React+Vite dashboard formatted with Tailwind CSS for monitoring key metrics, viewing charts, and manually overriding pump states.
+
+---
+
+## 3. Top-Level Directory Structure
+```text
+Smart Irrigation/
+├── backend/                  # Flask API server
+│   ├── app.py                # Entry point & blueprint route registration
+│   ├── firebase_config.py    # Firebase Admin SDK init (+ MockFirestore mode)
+│   ├── requirements.txt      # Python dependencies
+│   ├── .env.example          # Environment variables template
+│   └── routes/               # Modular controller endpoints
+│       ├── health.py         # ↳ GET  /api/health (System status check)
+│       ├── sensor.py         # ↳ POST /api/sensor-data, GET /api/latest, GET /api/history
+│       ├── pump.py           # ↳ POST /api/pump/on, POST /api/pump/off (Manual override)
+│       ├── decision.py       # ↳ POST /api/run-decision, GET /api/logs (Logic engine)
+│       ├── settings.py       # ↳ GET  /api/settings, POST /api/settings (Configs)
+│       └── ml.py             # ↳ GET  /api/ml/predict-schedule (LSTM placeholder)
+│
+└── frontend/                 # React + Vite Client Application
+    ├── src/
+    │   ├── main.jsx          # React DOM mounting
+    │   ├── App.jsx           # React Router and routing guards
+    │   ├── api.js            # Axios API service mapping to Flask backend
+    │   ├── firebase.js       # Firebase Web Client SDK layout
+    │   ├── index.css         # Tailwind directives + custom CSS 
+    │   ├── context/
+    │   │   └── AuthContext.jsx # Authing state provider (Firebase)
+    │   ├── pages/            
+    │   │   ├── LandingPage.jsx, LoginPage.jsx, DashboardPage.jsx
+    │   └── components/
+    │       ├── SensorCards.jsx        # Live metric cards (Moisture, Temp, etc.)
+    │       ├── SensorCharts.jsx       # Interactive historic charts (Recharts)
+    │       ├── IrrigationControls.jsx # Manual pump toggles UI
+    │       ├── SchedulePanel.jsx      # Upcoming watering schedules
+    │       ├── LogsTable.jsx          # Event and decision logs audit table
+    │       └── SettingsPanel.jsx      # Logic config panels 
+    ├── tailwind.config.js    # Design system palette and styles
+    └── vite.config.js        # Vite bundler configurations
+```
+
+---
+
+## 4. REST API Endpoint Specification
+
+### System & Health
+- **`GET /api/health`** — Standard keep-alive response detailing server health, Database connectivity, and uptime stats.
+
+### Telemetry (Sensors)
+- **`POST /api/sensor-data`** — Ingests a new environmental reading from the ESP32. 
+  *Expected Payload*: `{"deviceId": "field-001", "soilMoisture": 35, "temperature": 30, "humidity": 60, "network": "wifi"}`
+- **`GET /api/latest?deviceId={id}`** — Fetches only the most recently broadcasted sensor properties.
+- **`GET /api/history?deviceId={id}`** — Returns historical time-series datasets required to generate the frontend analytic charts.
+
+### Irrigation & Decision Logic
+- **`POST /api/pump/on` | `POST /api/pump/off`** — Issues manual override instructions to flip the pump relay state. Creates a trace within the audit logs.
+- **`POST /api/run-decision`** — Invokes the master rule-based logic engine. Evaluates the latest `soilMoisture` against the set thresholds and validates against external weather patterns (e.g., skips watering if heavy rain is predicted locally).
+- **`GET /api/logs?deviceId={id}`** — Retrieves chronological system event logs and past automatic triggers.
+
+### Settings & Predictions
+- **`GET /api/settings?deviceId={id}` | `POST /api/settings`** — Retrieves or overwrites target automation limits (min moisture bounds, auto-mode toggling, override durations).
+- **`GET /api/ml/predict-schedule`** — Hits the `ml.py` routines utilizing heuristics to anticipate the next required irrigation duration.
+
+---
+
+## 5. Development Setup & Execution
+
+### 5.1. Local Backend Setup (Flask)
+1. Initialize virtual environment: 
+   ```powershell
+   cd backend
+   python -m venv venv
+   venv\Scripts\activate
+   ```
+2. Install dependencies:
+   ```powershell
+   pip install -r requirements.txt
+   ```
+3. Prepare the environment file `.env` using `.env.example`. Optionally insert an `OPENWEATHER_API_KEY` for live weather integrations.
+4. Launch the API:
+   ```powershell
+   python app.py
+   ```
+*(Note: If no `firebase-credentials.json` is supplied, the server spins up a local in-memory Mock Firestore initialized with 48 hours of dummy sensor data to facilitate demo testing.)*
+
+### 5.2. Local Frontend Setup (React)
+1. Navigate directory and install NPM packages:
+   ```powershell
+   cd frontend
+   npm install
+   ```
+2. Spawn the Vite dev server:
+   ```powershell
+   npm run dev
+   ```
+3. Open `http://localhost:5173`. When testing, you may click the **"Enter as Demo User (skip auth)"** on the Login Page to jump directly into the dashboard.
+
+---
+
+## 6. Hardware (ESP32) Workflow Guidelines
+* **Polling Rate**: The device should assemble `JSON` payloads and POST to `/api/sensor-data` every **30 seconds** under normal conditions.
+* **Fallback Mechanisms**: On WiFi disruption, the hardware must queue metrics to the local SD Card and utilize LoRa connectivity (`"network": "lora"`) to maintain system integrity.
+
+## 7. Machine Learning (LSTM) Overview
+Currently implemented as a heuristic placeholder inside `ml.py`, the planned architecture incorporates an **LSTM RNN** capable of determining exact irrigation probabilistic matrices.
+* **Input Layer**: Analyzes a rolling 24-hour batch of vectors `[soilMoisture, temperature, humidity, hourOfDay]`.
+* **Deep Neural Flow**: Pushes from a 64-unit LSTM block down to a 32-unit LSTM, compiling into a dense ReLU layer.
+* **Output Node**: Yields a Sigmoid float mapping an irrigation probability between 0 and 1. Trained on logs stored natively inside Firestore.
