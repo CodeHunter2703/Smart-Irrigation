@@ -161,21 +161,32 @@ class MockFirestore:
         device_id = "field-001"
 
         # Seed sensor readings (last 24 hours, one per 30 min)
+        # Includes rain-forecast fields: sealevelpressure, cloudcover, windspeed, rainfall_mm
         readings = []
+        rain_pattern = [0, 0, 0, 0, 2.1, 4.5, 3.2, 0, 0, 1.0, 0, 0, 0, 0, 0, 5.3, 6.1, 4.0, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 2.1, 4.5, 3.2, 0, 0, 1.0, 0, 0, 0, 0, 0, 5.3, 6.1, 4.0, 0, 0, 0, 0, 0, 0]
         for i in range(48, 0, -1):
             ts = now - timedelta(minutes=30 * i)
+            # Simulate a couple of rainy periods in the mock data
+            is_rainy = i in range(5, 10) or i in range(18, 24)
             readings.append({
                 "_id": f"r{i}",
                 "deviceId": device_id,
                 "soilMoisture": round(random.uniform(28, 72), 1),
-                "temperature": round(random.uniform(24, 34), 1),
-                "humidity": round(random.uniform(45, 80), 1),
+                "temperature": round(random.uniform(22, 34), 1),
+                "humidity": round(random.uniform(55, 85) if is_rainy else 45, 1),
                 "waterLevel": random.choice(["medium", "medium", "high", "low"]),
                 "pumpStatus": random.choice(["OFF", "OFF", "ON"]),
                 "network": random.choice(["wifi", "wifi", "wifi", "lora"]),
                 "timestamp": ts.isoformat(),
+                # Weather / rain-forecast fields
+                "sealevelpressure": round(random.uniform(1005, 1020) if not is_rainy else random.uniform(998, 1008), 2),
+                "cloudcover":       round(random.uniform(60, 90) if is_rainy else random.uniform(10, 50), 1),
+                "windspeed":        round(random.uniform(8, 20) if is_rainy else random.uniform(2, 12), 1),
+                "rainfall_mm":      round(rain_pattern[48 - i] if (48 - i) < len(rain_pattern) else 0, 2),
             })
         self._store["sensor_readings"] = readings
+
 
         # Seed device status
         latest = readings[-1]

@@ -31,6 +31,7 @@ from routes.weather import weather_bp
 from routes.community import community_bp
 from routes.gemini import gemini_bp
 from routes.plant_disease import plant_disease_bp
+from routes.rain_forecast import rain_forecast_bp
 
 app = Flask(__name__)
 
@@ -48,6 +49,7 @@ app.register_blueprint(weather_bp, url_prefix="/api")
 app.register_blueprint(community_bp, url_prefix="/api")
 app.register_blueprint(gemini_bp, url_prefix="/api")
 app.register_blueprint(plant_disease_bp, url_prefix="/api")
+app.register_blueprint(rain_forecast_bp, url_prefix="/api")
 
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", 5000))

@@ -16,6 +16,7 @@ import WeatherWidget from '../components/WeatherWidget'
 import CommunityPanel from '../components/CommunityPanel'
 import SensorDashboard from '../components/SensorDashboard'
 import PlantDiseaseCard from '../components/PlantDiseaseCard'
+import RainForecastCard from '../components/RainForecastCard'
 import ControlsPage from './ControlsPage'
 
 const POLL_INTERVAL = 30_000      // refresh every 30 seconds
@@ -24,6 +25,7 @@ const DEVICE_ID = 'field-001'
 const NAV_TABS = [
     { id: 'overview', label: 'Overview' },
     { id: 'disease', label: '🌿 Disease AI' },
+    { id: 'rain',    label: '🌧️ Rain Forecast' },
     { id: 'controls', label: 'Controls' },
     { id: 'analytics', label: 'Analytics' },
     { id: 'schedule', label: 'Schedule' },
@@ -238,8 +240,11 @@ export default function DashboardPage() {
                     <div className="space-y-6 animate-fade-in">
                         <SensorDashboard deviceId={DEVICE_ID} />
                         <SensorCards data={latestData} />
-                        {/* Plant Disease Detection — always visible on overview for judges */}
-                        <PlantDiseaseCard />
+                        {/* AI Feature Cards — always visible on Overview for judges */}
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                            <PlantDiseaseCard />
+                            <RainForecastCard />
+                        </div>
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             <div className="lg:col-span-2">
                                 <SensorCharts history={history} />
@@ -254,6 +259,12 @@ export default function DashboardPage() {
                 {activeTab === 'disease' && (
                     <div className="animate-fade-in max-w-3xl">
                         <PlantDiseaseCard />
+                    </div>
+                )}
+
+                {activeTab === 'rain' && (
+                    <div className="animate-fade-in max-w-3xl">
+                        <RainForecastCard />
                     </div>
                 )}
 

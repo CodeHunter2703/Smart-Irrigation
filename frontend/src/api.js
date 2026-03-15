@@ -104,3 +104,7 @@ export const predictPlantDisease = (imageBase64, isDemoType = null) =>
 export const getDemoImages = () => get('/plant-disease/demo-images')
 
 export const getPlantDiseaseClasses = () => get('/plant-disease/classes')
+
+// ── Rain Forecasting ───────────────────────────────────
+export const predictRain = (payload) => post('/predict-rain', payload)
+export const getRainPrediction = (deviceId = 'field-001') => get(`/predict-rain?deviceId=${deviceId}`)
